@@ -3,3 +3,4 @@
 opengov-go
 
 *.sqlite*
+*.csv

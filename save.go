@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"encoding/csv"
 	"log"
 	"os"
 	"path/filepath"
@@ -15,12 +16,19 @@ type SaveType string
 
 const (
 	TypeSqlite SaveType = "sqlite"
+	TypeCsv    SaveType = "csv"
 
 	// TODO - support more types
 )
 
 const (
+	// SQLite
 	SqliteFilename = "opengov.sqlite"
+
+	// CSV
+	CsvFilenameInfo     = "info_list.csv"
+	CsvFilenamePublic   = "public_list.csv"
+	CsvFilenameResearch = "research_list.csv"
 )
 
 // 저장
@@ -30,6 +38,8 @@ func save(saveType SaveType, infoList []types.InfoList, publicList []types.Publi
 	switch saveType {
 	case TypeSqlite:
 		err = saveSqlite(infoList, publicList, researchList)
+	case TypeCsv:
+		err = saveCsv(infoList, publicList, researchList)
 	}
 
 	return err
@@ -113,7 +123,7 @@ func saveSqlite(infoList []types.InfoList, publicList []types.PublicList, resear
 
 		// TODO - create indices
 
-		// insert values to each table
+		// insert values into each table
 		for _, info := range infoList {
 			if stmt, err := db.Prepare(`insert into info_lists(
 				package_id,
@@ -227,6 +237,168 @@ func saveSqlite(infoList []types.InfoList, publicList []types.PublicList, resear
 	}
 
 	log.Printf("> Saved to: %s\n", dbFilepath)
+
+	return nil
+}
+
+// .csv 파일로 저장
+func saveCsv(infoList []types.InfoList, publicList []types.PublicList, researchList []types.ResearchList) error {
+	log.Printf("> Saving to csv...")
+
+	var csvFilepath string
+
+	// info_list
+	log.Printf("> Saving to %s...", CsvFilenameInfo)
+	if currentDir, err := os.Getwd(); err != nil {
+		return err
+	} else {
+		csvFilepath = filepath.Join(currentDir, CsvFilenameInfo)
+
+		_ = os.Remove(csvFilepath) // delete first,
+		if file, err := os.Create(csvFilepath); err != nil {
+			return err
+		} else {
+			defer file.Close()
+
+			writer := csv.NewWriter(file)
+			defer writer.Flush()
+			writer.Write([]string{
+				"package_id",
+				"doc_prdctn_dt",
+				"trck_card_nm",
+				"title",
+				"src_dept_doc_id",
+				"writer",
+				"othnd_pd",
+				"dept_nm",
+				"othbs_se",
+				"cpyrht",
+				"url",
+			})
+			for _, info := range infoList {
+				if err := writer.Write([]string{
+					info.PackageId,
+					info.DocumentProductionDate,
+					info.TrackCardName,
+					info.Title,
+					info.SourceDepartmentDocumentId,
+					info.Writer,
+					info.OthndPeriod,
+					info.DepartmentName,
+					info.OthbsSe,
+					info.Copyright,
+					info.Url,
+				}); err != nil {
+					return err
+				}
+			}
+		}
+	}
+	log.Printf("> Saved to: %s\n", csvFilepath)
+
+	// public_list
+	log.Printf("> Saving to %s...", CsvFilenamePublic)
+	if currentDir, err := os.Getwd(); err != nil {
+		return err
+	} else {
+		csvFilepath = filepath.Join(currentDir, CsvFilenamePublic)
+
+		_ = os.Remove(csvFilepath) // delete first,
+		if file, err := os.Create(csvFilepath); err != nil {
+			return err
+		} else {
+			defer file.Close()
+
+			writer := csv.NewWriter(file)
+			defer writer.Flush()
+			writer.Write([]string{
+				"nid",
+				"category",
+				"title",
+				"writer",
+				"dept_nm",
+				"regist_dt",
+				"taxonomy",
+				"telno",
+				"cpyrht",
+				"url",
+			})
+			for _, public := range publicList {
+				if err := writer.Write([]string{
+					public.Nid,
+					public.Category,
+					public.Title,
+					public.Writer,
+					public.DepartmentName,
+					public.RegisterDate,
+					public.Taxonomy,
+					public.TelephonNumber,
+					public.Copyright,
+					public.Url,
+				}); err != nil {
+					return err
+				}
+			}
+		}
+	}
+	log.Printf("> Saved to: %s\n", csvFilepath)
+
+	// research_list
+	log.Printf("> Saving to %s...", CsvFilenameResearch)
+	if currentDir, err := os.Getwd(); err != nil {
+		return err
+	} else {
+		csvFilepath = filepath.Join(currentDir, CsvFilenameResearch)
+
+		_ = os.Remove(csvFilepath) // delete first,
+		if file, err := os.Create(csvFilepath); err != nil {
+			return err
+		} else {
+			defer file.Close()
+
+			writer := csv.NewWriter(file)
+			defer writer.Flush()
+			writer.Write([]string{
+				"nid",
+				"title",
+				"regist_dt",
+				"relm_cl",
+				"creat_yr",
+				"category",
+				"region",
+				"isbn",
+				"relte_area",
+				"writer",
+				"doc_prdctn_dt",
+				"cpyrht",
+				"othbs_se",
+				"job_se",
+				"url",
+			})
+			for _, research := range researchList {
+				if err := writer.Write([]string{
+					research.Nid,
+					research.Title,
+					research.RegisterDate,
+					research.RelmCl,
+					research.CreateYear,
+					research.Category,
+					research.Region,
+					research.Isbn,
+					research.RelteArea,
+					research.Writer,
+					research.DocumentProductionDate,
+					research.Copyright,
+					research.OthbsSe,
+					research.JobSe,
+					research.Url,
+				}); err != nil {
+					return err
+				}
+			}
+		}
+	}
+	log.Printf("> Saved to: %s\n", csvFilepath)
 
 	return nil
 }
