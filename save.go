@@ -93,6 +93,7 @@ func saveSqlite(infoList []types.InfoList, publicList []types.PublicList, resear
 		if _, err := db.Exec(`create table research_lists(
 			id integer primary key autoincrement,
 			nid text not null,
+			title text not null,
 			regist_dt text not null,
 			relm_cl text not null,
 			creat_yr text not null,
@@ -182,6 +183,7 @@ func saveSqlite(infoList []types.InfoList, publicList []types.PublicList, resear
 		for _, research := range researchList {
 			if stmt, err := db.Prepare(`insert into research_lists(
 				nid,
+				title,
 				regist_dt,
 				relm_cl,
 				creat_yr,
@@ -195,7 +197,7 @@ func saveSqlite(infoList []types.InfoList, publicList []types.PublicList, resear
 				othbs_se,
 				job_se,
 				url
-			) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`); err != nil {
+			) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`); err != nil {
 				return err
 			} else {
 				defer stmt.Close()
